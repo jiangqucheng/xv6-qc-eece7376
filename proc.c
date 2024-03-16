@@ -532,3 +532,51 @@ procdump(void)
     cprintf("\n");
   }
 }
+
+
+int countDigits(int num) {
+  int count = 0;
+  if (num == 0) return 1;
+  while (num != 0) {
+    num /= 10;
+    count++;
+  }
+  return count;
+}
+
+//PAGEBREAK: 36
+// Print a process listing to console.  For debugging.
+// Runs when user types ^P on console.
+// No lock to avoid wedging a stuck machine further.
+void
+procdump_hw4(void)
+{
+  static char *states[] = {
+  [UNUSED]    "unused",
+  [EMBRYO]    "embryo",
+  [SLEEPING]  "sleep ",
+  [RUNNABLE]  "runble",
+  [RUNNING]   "run   ",
+  [ZOMBIE]    "zombie"
+  };
+  struct proc *p;
+  char *state;
+  int digits; 
+
+  cprintf("PID[PPID] STATE  NAME");
+  cprintf("\n");
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    if(p->state == UNUSED)
+      continue;
+    if(p->state >= 0 && p->state < NELEM(states) && states[p->state])
+      state = states[p->state];
+    else
+      state = "???";
+    cprintf("%d[%d]", p->pid, (p->parent)?(p->parent->pid):0);
+    digits = countDigits(p->pid) + ((p->parent)?countDigits(p->parent->pid):1);
+    digits = 8 - digits;
+    for (int i = 0; i<digits; i++) cprintf(" ");
+    cprintf("%s %s", state, p->name);
+    cprintf("\n");
+  }
+}

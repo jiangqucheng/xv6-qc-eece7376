@@ -15,6 +15,6 @@ main(int argc, char **argv)
     exit();
   }
   date(&a);
-  printf(1, "%d/%d/%d  %d:%d:%d\n", a.month, a.day, a.year, a.hour, a.minute, a.second);
+  printf(1, "%d/%d/%d %d:%d:%d\n", a.month, a.day, a.year, a.hour, a.minute, a.second);
   exit();
 }

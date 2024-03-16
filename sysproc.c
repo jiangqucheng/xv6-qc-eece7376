@@ -101,3 +101,10 @@ sys_date(void)
   // always return 0
   return 0;
 }
+
+int
+sys_ps(void)
+{
+  procdump_hw4(); 
+  return 0;
+}

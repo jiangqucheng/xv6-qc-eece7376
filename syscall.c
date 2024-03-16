@@ -106,6 +106,7 @@ extern int sys_uptime(void);
 
 // my syscall
 extern int sys_date(void);
+extern int sys_ps(void);
 
 static int (*syscalls[])(void) = {
 [SYS_fork]    sys_fork,
@@ -131,7 +132,8 @@ static int (*syscalls[])(void) = {
 [SYS_close]   sys_close,
 
 // my syscall
-[SYS_date]   sys_date,
+[SYS_date]    sys_date,
+[SYS_ps]      sys_ps,
 };
 
 void

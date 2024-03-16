@@ -26,6 +26,7 @@ int uptime(void);
 
 // my syscall
 int date(struct rtcdate*);
+int ps(void);
 
 // ulib.c
 int stat(const char*, struct stat*);
