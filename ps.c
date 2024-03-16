@@ -16,10 +16,11 @@ main(int argc, char **argv)
     exit();
   } else if (pid == 0) {
     // child
-    sleep(10); // keep in sleep
+    sleep(100); // keep in sleep
     exit();
   } else {
     // parent
+    sleep(10); // keep in sleep
     ps();
     wait(); // wait for the child process
   }

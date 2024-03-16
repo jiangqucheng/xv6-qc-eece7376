@@ -88,6 +88,7 @@ allocproc(void)
 found:
   p->state = EMBRYO;
   p->pid = nextpid++;
+  p->priority = 1 - (p->pid % 2);
 
   release(&ptable.lock);
 
@@ -311,6 +312,49 @@ wait(void)
   }
 }
 
+void
+scheduler_execute(struct proc *p, struct cpu *c)
+{
+  if(p->state != RUNNABLE) return;
+
+  // Switch to chosen process.  It is the process's job
+  // to release ptable.lock and then reacquire it
+  // before jumping back to us.
+  c->proc = p;
+  switchuvm(p);
+  p->state = RUNNING;
+
+  swtch(&(c->scheduler), p->context);
+  switchkvm();
+
+  // Process is done running for now.
+  // It should have changed its p->state before coming back.
+  c->proc = 0;
+  return;
+}
+
+// Unsafe: Suppose you already got the lock.
+uint
+scheduler_search_highest_runable_priority_num(void)
+{
+  struct proc *p;
+  uint highest_priority_num = 0U-1;
+
+  for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
+    switch (p->state){
+      case RUNNABLE:
+        if(p->priority<highest_priority_num)
+          highest_priority_num = p->priority;
+        break;
+      case EMBRYO:
+      case ZOMBIE:
+      default: 
+        break;
+    }
+  }
+  return highest_priority_num;
+}
+
 //PAGEBREAK: 42
 // Per-CPU process scheduler.
 // Each CPU calls scheduler() after setting itself up.
@@ -325,6 +369,7 @@ scheduler(void)
   struct proc *p;
   struct cpu *c = mycpu();
   c->proc = 0;
+  uint can_run_priority_num = 9999;
   
   for(;;){
     // Enable interrupts on this processor.
@@ -333,25 +378,15 @@ scheduler(void)
     // Loop over process table looking for process to run.
     acquire(&ptable.lock);
     for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
-      if(p->state != RUNNABLE)
+      can_run_priority_num = scheduler_search_highest_runable_priority_num();
+      if (p->priority <= can_run_priority_num){
+        // cprintf("\r%d %s", can_run_priority_num, p->name);
+        scheduler_execute(p, c);  // swtch to start running that process[p] on cpu[c]
+      }
+      else
         continue;
-
-      // Switch to chosen process.  It is the process's job
-      // to release ptable.lock and then reacquire it
-      // before jumping back to us.
-      c->proc = p;
-      switchuvm(p);
-      p->state = RUNNING;
-
-      swtch(&(c->scheduler), p->context);
-      switchkvm();
-
-      // Process is done running for now.
-      // It should have changed its p->state before coming back.
-      c->proc = 0;
     }
     release(&ptable.lock);
-
   }
 }
 
@@ -563,7 +598,7 @@ procdump_hw4(void)
   char *state;
   int digits; 
 
-  cprintf("PID[PPID] STATE  NAME");
+  cprintf("PID[PPID] Pri STATE  NAME");
   cprintf("\n");
   for(p = ptable.proc; p < &ptable.proc[NPROC]; p++){
     if(p->state == UNUSED)
@@ -576,6 +611,7 @@ procdump_hw4(void)
     digits = countDigits(p->pid) + ((p->parent)?countDigits(p->parent->pid):1);
     digits = 8 - digits;
     for (int i = 0; i<digits; i++) cprintf(" ");
+    cprintf("(%d) ", p->priority);
     cprintf("%s %s", state, p->name);
     cprintf("\n");
   }
