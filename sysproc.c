@@ -53,6 +53,7 @@ sys_sbrk(void)
   addr = myproc()->sz;
   if(growproc(n) < 0)
     return -1;
+  cprintf("pid:%d grows heap from %x to %x with size of %d bytes (%x).\n", myproc()->pid, addr, myproc()->sz, myproc()->sz+addr, myproc()->sz+addr);
   return addr;
 }
 
